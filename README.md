@@ -4,8 +4,9 @@ Browser-facing Spring Boot gateway for Job Seeker Copilot AI Credit wallet,
 pricing, checkout and transaction APIs.
 
 This repository is a sanitised audit baseline, not a beta-ready payment release.
-The current source requires locally supplied generated Payment Service and Stripe
-Gateway client JARs. Those binaries are intentionally not committed.
+The gateway builds from committed source without copied generated-client JARs.
+Its handwritten downstream adapters are checked against reviewed, checksum-
+protected Payment Service and Stripe Gateway producer contracts.
 
 See [`docs/BETA_READINESS_AUDIT.md`](docs/BETA_READINESS_AUDIT.md) for verified
 security, build and product findings.
@@ -18,11 +19,22 @@ Java 17 and Maven are required.
 mvn -B clean verify
 ```
 
-The command fails in a clean clone until generated clients are made reproducible.
-Do not commit JARs as a workaround.
+The build needs no sibling checkout, `libs` directory or generated binary.
 
 The OpenAPI contract captured during the source audit is in
 `contracts/openapi.json`.
+
+Run the pinned downstream compatibility gates with:
+
+```bash
+./scripts/test-contract-policy.sh
+./scripts/verify-contracts.sh
+./scripts/test-api-contract-policy.sh
+./scripts/verify-api-contract.sh
+```
+
+See [`docs/CONTRACT_GOVERNANCE.md`](docs/CONTRACT_GOVERNANCE.md) for producer
+ownership, revision/checksum pins, regeneration and rollback.
 
 ## Licence
 
