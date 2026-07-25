@@ -10,12 +10,6 @@ import org.springframework.web.client.RestClientException;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
-    @ExceptionHandler(MissingUserIdException.class)
-    ResponseEntity<Map<String, String>> missingUserId(MissingUserIdException exception) {
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                .body(Map.of("error", "UNAUTHORIZED", "message", "Missing X-User-Id header"));
-    }
-
     @ExceptionHandler(MethodArgumentNotValidException.class)
     ResponseEntity<Map<String, String>> validation(MethodArgumentNotValidException exception) {
         return ResponseEntity.badRequest()

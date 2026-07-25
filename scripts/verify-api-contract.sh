@@ -19,14 +19,25 @@ done
 )
 
 jq -e '
+    def serviceAuthenticated($operation):
+        $operation.security == [{"serviceToken": []}];
+    def trustedOwner($operation):
+        ($operation.parameters // []
+            | any(.name == "X-Payment-Owner" and .in == "header" and .required == true));
+    def noLegacyOwner($operation):
+        ($operation.parameters // [] | all(.name != "X-User-Id"));
     (.openapi | type == "string" and startswith("3.")) and
-    (.info.version == "1.0.0") and
+    (.info.version == "2.0.0") and
+    (.components.securitySchemes.serviceToken
+        | .type == "apiKey" and .in == "header" and .name == "X-Service-Token") and
     (.paths["/api/v1/payment/wallet"].get.operationId == "wallet") and
     (.paths["/api/v1/payment/transactions"].get.operationId == "transactions") and
     (.paths["/api/v1/payment/pricing"].get.operationId == "pricing") and
     (.paths["/api/v1/payment/demo-purchase"].post.operationId == "demoPurchase") and
     (.paths["/api/v1/payment/checkout"].post.operationId == "checkout") and
     (.paths["/api/v1/payment/estimate"].post.operationId == "estimate") and
+    ([.paths[] | .[]]
+        | all(serviceAuthenticated(.) and trustedOwner(.) and noLegacyOwner(.))) and
     (.components.schemas.CheckoutRequest.required == ["pricingPlanId"]) and
     (.components.schemas.CheckoutResponse.properties | has("sessionId") and has("checkoutUrl")) and
     (.components.schemas.WalletSummaryResponse.properties

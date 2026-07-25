@@ -23,23 +23,45 @@ done
 
 test "$(wc -l < "$contract_dir/payment-service.SOURCE" | tr -d ' ')" = 4
 grep -Fx 'repository=jobseekercopilot/payment-service' "$contract_dir/payment-service.SOURCE" >/dev/null
-grep -Fx 'revision=3175e5730cd0743e15455a0acc8e2bc35b56a78f' "$contract_dir/payment-service.SOURCE" >/dev/null
+grep -Fx 'revision=0243471685ef128f84d7011950f2baa2f1450acf' "$contract_dir/payment-service.SOURCE" >/dev/null
 grep -Fx 'path=contracts/openapi.json' "$contract_dir/payment-service.SOURCE" >/dev/null
-grep -Fx 'sha256=2b1bfef95e1ba4c1f191627dfc4972b3ed7a931dead8fbb7aecbf5b793acae7a' "$contract_dir/payment-service.SOURCE" >/dev/null
+grep -Fx 'sha256=446dc9a1450bf876c3bd477e6120fe1b3b40ff3326334cb985a28e31828b22a0' "$contract_dir/payment-service.SOURCE" >/dev/null
 
 test "$(wc -l < "$contract_dir/stripe-gateway.SOURCE" | tr -d ' ')" = 4
 grep -Fx 'repository=jobseekercopilot/stripe-gateway' "$contract_dir/stripe-gateway.SOURCE" >/dev/null
-grep -Fx 'revision=18cc71ddda37152c4e8154b23745217fb895064d' "$contract_dir/stripe-gateway.SOURCE" >/dev/null
+grep -Fx 'revision=a78aba1ae1784b8000fdad925bb5da6b0929fd1c' "$contract_dir/stripe-gateway.SOURCE" >/dev/null
 grep -Fx 'path=contracts/openapi.json' "$contract_dir/stripe-gateway.SOURCE" >/dev/null
-grep -Fx 'sha256=4a10b1da2c525b17c80f995055f358c63c7252ae7f4152109d607aa7dd4bc09c' "$contract_dir/stripe-gateway.SOURCE" >/dev/null
+grep -Fx 'sha256=e09a0447a6a0e51ae826d79eb698d6cbc855478d677b280be15818035da9bf4b' "$contract_dir/stripe-gateway.SOURCE" >/dev/null
 
 jq -e '
-    (.info.version == "1.0.0") and
+    def serviceAuthenticated($operation):
+        $operation.security == [{"serviceToken": []}];
+    def trustedOwner($operation):
+        ($operation.parameters // []
+            | any(.name == "X-Payment-Owner" and .in == "header" and .required == true));
+    def noLegacyOwner($operation):
+        ($operation.parameters // [] | all(.name != "X-User-Id"));
+    (.info.version == "2.0.0") and
+    (.components.securitySchemes.serviceToken
+        | .type == "apiKey" and .in == "header" and .name == "X-Service-Token") and
     (.paths["/api/v1/payments/wallet"].get.operationId == "wallet") and
+    serviceAuthenticated(.paths["/api/v1/payments/wallet"].get) and
+    trustedOwner(.paths["/api/v1/payments/wallet"].get) and
+    noLegacyOwner(.paths["/api/v1/payments/wallet"].get) and
     (.paths["/api/v1/payments/transactions"].get.operationId == "transactions") and
+    serviceAuthenticated(.paths["/api/v1/payments/transactions"].get) and
+    trustedOwner(.paths["/api/v1/payments/transactions"].get) and
+    noLegacyOwner(.paths["/api/v1/payments/transactions"].get) and
     (.paths["/api/v1/payments/pricing"].get.operationId == "pricing") and
+    serviceAuthenticated(.paths["/api/v1/payments/pricing"].get) and
     (.paths["/api/v1/payments/demo-purchase"].post.operationId == "demoPurchase") and
+    serviceAuthenticated(.paths["/api/v1/payments/demo-purchase"].post) and
+    trustedOwner(.paths["/api/v1/payments/demo-purchase"].post) and
+    noLegacyOwner(.paths["/api/v1/payments/demo-purchase"].post) and
     (.paths["/api/v1/payments/estimate"].post.operationId == "estimate") and
+    serviceAuthenticated(.paths["/api/v1/payments/estimate"].post) and
+    trustedOwner(.paths["/api/v1/payments/estimate"].post) and
+    noLegacyOwner(.paths["/api/v1/payments/estimate"].post) and
     (.components.schemas.WalletSummaryResponse.properties
         | has("userId") and has("balanceTokens") and has("lifetimePurchasedTokens") and
           has("lifetimeSpentTokens") and has("lifetimeRefundedTokens") and has("freeTrialGranted")) and
@@ -50,8 +72,16 @@ jq -e '
 ' "$contract_dir/payment-service.json" >/dev/null
 
 jq -e '
-    (.info.version == "1.0.0") and
+    (.info.version == "2.0.0") and
+    (.components.securitySchemes.serviceToken
+        | .type == "apiKey" and .in == "header" and .name == "X-Service-Token") and
     (.paths["/api/v1/stripe/checkout-sessions"].post.operationId == "createCheckoutSession") and
+    (.paths["/api/v1/stripe/checkout-sessions"].post.security
+        == [{"serviceToken": []}]) and
+    (.paths["/api/v1/stripe/checkout-sessions"].post.parameters
+        | any(.name == "X-Payment-Owner" and .in == "header" and .required == true)) and
+    (.paths["/api/v1/stripe/checkout-sessions"].post.parameters
+        | all(.name != "X-User-Id")) and
     (.paths["/api/v1/stripe/checkout-sessions"].post.requestBody.content["application/json"].schema["$ref"]
         == "#/components/schemas/CreateCheckoutSessionRequest") and
     (.paths["/api/v1/stripe/checkout-sessions"].post.responses["200"].content["*/*"].schema["$ref"]

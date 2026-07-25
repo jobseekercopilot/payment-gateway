@@ -10,6 +10,8 @@ protected Payment Service and Stripe Gateway producer contracts.
 
 See [`docs/BETA_READINESS_AUDIT.md`](docs/BETA_READINESS_AUDIT.md) for verified
 security, build and product findings.
+See [`docs/PAYMENT_IDENTITY_BOUNDARY.md`](docs/PAYMENT_IDENTITY_BOUNDARY.md)
+for the BFF and downstream service trust boundary.
 
 ## Build
 
@@ -23,6 +25,11 @@ The build needs no sibling checkout, `libs` directory or generated binary.
 
 The OpenAPI contract captured during the source audit is in
 `contracts/openapi.json`.
+
+The gateway requires `BFF_TO_PAYMENT_GATEWAY_TOKEN` on ingress and uses
+`PAYMENT_GATEWAY_TO_PAYMENT_SERVICE_TOKEN` and
+`PAYMENT_GATEWAY_TO_STRIPE_GATEWAY_TOKEN` on the two downstream boundaries.
+Each token must contain at least 32 bytes and all three must be distinct.
 
 Run the pinned downstream compatibility gates with:
 

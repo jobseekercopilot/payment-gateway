@@ -17,7 +17,10 @@ generated client types.
 
 Payment Gateway owns `contracts/openapi.json` for its browser-facing API.
 `contracts/SHA256SUMS`, the API policy and post-build equality check against
-`target/openapi.json` keep that producer source authoritative.
+`target/openapi.json` keep that producer source authoritative. The policies
+also require the BFF service identity and trusted owner on every retained
+browser operation, plus authenticated downstream Payment Service and Stripe
+Gateway contracts.
 
 ## Updating a pin
 
