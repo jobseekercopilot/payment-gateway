@@ -12,21 +12,27 @@ import com.jobseekercopilot.paymentgateway.service.PaymentGatewayService;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest
+@SpringBootTest
+@AutoConfigureMockMvc
 class PaymentGatewayControllerTest {
+    private static final String BFF_TOKEN = "bff-payment-gateway-test-token-000000000001";
+
     @Autowired private MockMvc mockMvc;
     @Autowired private ObjectMapper objectMapper;
     @MockBean private PaymentGatewayService paymentGatewayService;
@@ -39,7 +45,9 @@ class PaymentGatewayControllerTest {
         response.setFreeTrialGranted(true);
         when(paymentGatewayService.wallet(eq("user-123"))).thenReturn(response);
 
-        mockMvc.perform(get("/api/v1/payment/wallet").header("X-User-Id", "user-123"))
+        mockMvc.perform(get("/api/v1/payment/wallet")
+                        .header("X-Service-Token", BFF_TOKEN)
+                        .header("X-Payment-Owner", "user-123"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.userId").value("user-123"))
                 .andExpect(jsonPath("$.balanceTokens").value(20000));
@@ -56,7 +64,9 @@ class PaymentGatewayControllerTest {
         response.setPlans(List.of(plan));
         when(paymentGatewayService.pricing()).thenReturn(response);
 
-        mockMvc.perform(get("/api/v1/payment/pricing"))
+        mockMvc.perform(get("/api/v1/payment/pricing")
+                        .header("X-Service-Token", BFF_TOKEN)
+                        .header("X-Payment-Owner", "user-123"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.plans[0].id").value("starter"))
                 .andExpect(jsonPath("$.plans[0].tokenAmount").value(100000));
@@ -74,7 +84,8 @@ class PaymentGatewayControllerTest {
         DemoPurchaseRequest request = new DemoPurchaseRequest();
         request.setPricingPlanId("starter");
         mockMvc.perform(post("/api/v1/payment/demo-purchase")
-                        .header("X-User-Id", "user-123")
+                        .header("X-Service-Token", BFF_TOKEN)
+                        .header("X-Payment-Owner", "user-123")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
@@ -91,7 +102,8 @@ class PaymentGatewayControllerTest {
         CheckoutRequest request = new CheckoutRequest();
         request.setPricingPlanId("starter");
         mockMvc.perform(post("/api/v1/payment/checkout")
-                        .header("X-User-Id", "user-123")
+                        .header("X-Service-Token", BFF_TOKEN)
+                        .header("X-Payment-Owner", "user-123")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
@@ -100,7 +112,7 @@ class PaymentGatewayControllerTest {
     }
 
     @Test
-    void checkoutRequiresUserId() throws Exception {
+    void directOrForgedCheckoutCallsFailClosed() throws Exception {
         CheckoutRequest request = new CheckoutRequest();
         request.setPricingPlanId("starter");
 
@@ -108,13 +120,42 @@ class PaymentGatewayControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.message").value("Missing X-User-Id header"));
+                .andExpect(jsonPath("$.code").value("SERVICE_AUTHENTICATION_REQUIRED"));
+
+        mockMvc.perform(post("/api/v1/payment/checkout")
+                        .header("X-Service-Token", "forged")
+                        .header("X-Payment-Owner", "user-123")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value("SERVICE_AUTHENTICATION_REQUIRED"));
+
+        verify(paymentGatewayService, never()).checkout(any(), any());
     }
 
     @Test
-    void missingUserIdReturnsControlledError() throws Exception {
-        mockMvc.perform(get("/api/v1/payment/wallet"))
-                .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.message").value("Missing X-User-Id header"));
+    void legacyOrAmbiguousOwnerContextIsRejected() throws Exception {
+        mockMvc.perform(get("/api/v1/payment/wallet")
+                        .header("X-Service-Token", BFF_TOKEN)
+                        .header("X-Payment-Owner", "user-123")
+                        .header("X-User-Id", "victim-456"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("CALLER_IDENTITY_REJECTED"));
+
+        mockMvc.perform(get("/api/v1/payment/wallet")
+                        .header("X-Service-Token", BFF_TOKEN)
+                        .header("X-Payment-Owner", "user-123", "victim-456"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("PAYMENT_OWNER_REQUIRED"));
+
+        verify(paymentGatewayService, never()).wallet(any());
+    }
+
+    @Test
+    void validBffWithoutOwnerFailsClosed() throws Exception {
+        mockMvc.perform(get("/api/v1/payment/wallet")
+                        .header("X-Service-Token", BFF_TOKEN))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("PAYMENT_OWNER_REQUIRED"));
     }
 }

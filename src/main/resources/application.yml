@@ -5,6 +5,12 @@ spring:
 server:
   port: ${SERVER_PORT:8098}
 
+payment:
+  security:
+    bff-token: ${BFF_TO_PAYMENT_GATEWAY_TOKEN:}
+    payment-service-token: ${PAYMENT_GATEWAY_TO_PAYMENT_SERVICE_TOKEN:}
+    stripe-gateway-token: ${PAYMENT_GATEWAY_TO_STRIPE_GATEWAY_TOKEN:}
+
 services:
   payment-service:
     base-url: ${PAYMENT_SERVICE_URL:http://localhost:8099}
