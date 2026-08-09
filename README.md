@@ -1,5 +1,13 @@
 # Payment Gateway
 
+## Role in Job Seeker Copilot
+
+| Role | Called by | Calls | Data | Local port |
+|---|---|---|---|---:|
+| AI-credit wallet/pricing/checkout facade | Future trusted BFF path | Payment Service, Stripe Gateway | None | 8098 |
+
+The backend is composed, but the client BFF returns `FEATURE_NOT_AVAILABLE` for `/api/v1/payment/**` on `develop`. See the central [payment status](https://docs.jobseekercopilot.com/journeys/reporting-payments/) and [implementation status](https://docs.jobseekercopilot.com/reference/implementation-status/).
+
 Browser-facing Spring Boot gateway for Job Seeker Copilot AI Credit wallet,
 pricing, checkout and transaction APIs.
 
