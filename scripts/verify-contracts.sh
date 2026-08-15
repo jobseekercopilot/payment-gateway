@@ -23,15 +23,15 @@ done
 
 test "$(wc -l < "$contract_dir/payment-service.SOURCE" | tr -d ' ')" = 4
 grep -Fx 'repository=jobseekercopilot/payment-service' "$contract_dir/payment-service.SOURCE" >/dev/null
-grep -Fx 'revision=0243471685ef128f84d7011950f2baa2f1450acf' "$contract_dir/payment-service.SOURCE" >/dev/null
+grep -Fx 'revision=0c628cf81b8d91bebf127513bc39c950423a728b' "$contract_dir/payment-service.SOURCE" >/dev/null
 grep -Fx 'path=contracts/openapi.json' "$contract_dir/payment-service.SOURCE" >/dev/null
-grep -Fx 'sha256=446dc9a1450bf876c3bd477e6120fe1b3b40ff3326334cb985a28e31828b22a0' "$contract_dir/payment-service.SOURCE" >/dev/null
+grep -Fx 'sha256=acf21be9eff02aced215fdfce68d7577dfc79695877d4ee0dfc188fcaa1a779a' "$contract_dir/payment-service.SOURCE" >/dev/null
 
 test "$(wc -l < "$contract_dir/stripe-gateway.SOURCE" | tr -d ' ')" = 4
 grep -Fx 'repository=jobseekercopilot/stripe-gateway' "$contract_dir/stripe-gateway.SOURCE" >/dev/null
-grep -Fx 'revision=a78aba1ae1784b8000fdad925bb5da6b0929fd1c' "$contract_dir/stripe-gateway.SOURCE" >/dev/null
+grep -Fx 'revision=791b262ab8f4846fd47a131fface066d0cffdc5f' "$contract_dir/stripe-gateway.SOURCE" >/dev/null
 grep -Fx 'path=contracts/openapi.json' "$contract_dir/stripe-gateway.SOURCE" >/dev/null
-grep -Fx 'sha256=e09a0447a6a0e51ae826d79eb698d6cbc855478d677b280be15818035da9bf4b' "$contract_dir/stripe-gateway.SOURCE" >/dev/null
+grep -Fx 'sha256=2926c5270cdeb04e63ffb7272e352e490eb9e784a7d18b262495d7de319f479c' "$contract_dir/stripe-gateway.SOURCE" >/dev/null
 
 jq -e '
     def serviceAuthenticated($operation):
@@ -41,7 +41,7 @@ jq -e '
             | any(.name == "X-Payment-Owner" and .in == "header" and .required == true));
     def noLegacyOwner($operation):
         ($operation.parameters // [] | all(.name != "X-User-Id"));
-    (.info.version == "2.0.0") and
+    (.info.version == "3.2.1") and
     (.components.securitySchemes.serviceToken
         | .type == "apiKey" and .in == "header" and .name == "X-Service-Token") and
     (.paths["/api/v1/payments/wallet"].get.operationId == "wallet") and
@@ -72,7 +72,7 @@ jq -e '
 ' "$contract_dir/payment-service.json" >/dev/null
 
 jq -e '
-    (.info.version == "2.0.0") and
+    (.info.version == "2.2.0") and
     (.components.securitySchemes.serviceToken
         | .type == "apiKey" and .in == "header" and .name == "X-Service-Token") and
     (.paths["/api/v1/stripe/checkout-sessions"].post.operationId == "createCheckoutSession") and

@@ -27,7 +27,7 @@ jq -e '
     def noLegacyOwner($operation):
         ($operation.parameters // [] | all(.name != "X-User-Id"));
     (.openapi | type == "string" and startswith("3.")) and
-    (.info.version == "2.1.0") and
+    (.info.version == "2.1.1") and
     (.components.securitySchemes.serviceToken
         | .type == "apiKey" and .in == "header" and .name == "X-Service-Token") and
     (.paths["/api/v1/payment/wallet"].get.operationId == "wallet") and

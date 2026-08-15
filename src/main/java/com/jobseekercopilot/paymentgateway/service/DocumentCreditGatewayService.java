@@ -14,8 +14,6 @@ import com.jobseekercopilot.paymentgateway.security.PaymentGatewayCredentials;
 import com.jobseekercopilot.paymentgateway.exception.PaymentGatewayApiException;
 import java.util.Map;
 import java.util.UUID;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -24,7 +22,6 @@ import org.springframework.web.client.RestClientException;
 
 @Service
 public class DocumentCreditGatewayService {
-    private static final Logger log = LoggerFactory.getLogger(DocumentCreditGatewayService.class);
     private static final String SERVICE_TOKEN = "X-Service-Token";
     private static final String OWNER = "X-Payment-Owner";
     private static final String IDEMPOTENCY_KEY = "Idempotency-Key";
@@ -117,23 +114,17 @@ public class DocumentCreditGatewayService {
         if (order == null || order.orderId() == null) {
             throw new IllegalStateException("Payment Service returned an incomplete order");
         }
-        OwnedStripeCheckoutResponse checkout;
-        try {
-            checkout = stripeGateway.post().uri("/api/v2/stripe/checkout-sessions")
-                    .header(SERVICE_TOKEN, credentials.stripeGatewayToken())
-                    .header(OWNER, owner)
-                    .header(IDEMPOTENCY_KEY, key)
-                    .body(Map.of("orderId", order.orderId()))
-                    .retrieve().body(OwnedStripeCheckoutResponse.class);
-        } catch (RestClientException failure) {
-            cancelUnboundOrderBestEffort(owner, order.orderId());
-            throw failure;
-        }
+        OwnedStripeCheckoutResponse checkout =
+                stripeGateway.post().uri("/api/v2/stripe/checkout-sessions")
+                        .header(SERVICE_TOKEN, credentials.stripeGatewayToken())
+                        .header(OWNER, owner)
+                        .header(IDEMPOTENCY_KEY, key)
+                        .body(Map.of("orderId", order.orderId()))
+                        .retrieve().body(OwnedStripeCheckoutResponse.class);
         if (checkout == null
                 || !order.orderId().equals(checkout.orderId())
                 || checkout.url() == null
                 || checkout.url().isBlank()) {
-            cancelUnboundOrderBestEffort(owner, order.orderId());
             throw new IllegalStateException("Payment provider returned an incomplete Checkout session");
         }
         return new DocumentCreditCheckoutResponse(
@@ -173,17 +164,6 @@ public class DocumentCreditGatewayService {
                 .uri("/api/v2/payments/orders/{orderId}/status", orderId)
                 .headers(headers -> paymentHeaders(headers, owner))
                 .retrieve().body(PaymentOrderStatusResponse.class);
-    }
-
-    private void cancelUnboundOrderBestEffort(String owner, UUID orderId) {
-        try {
-            paymentService.post().uri("/api/v2/payments/orders/{orderId}/cancel", orderId)
-                    .headers(headers -> paymentHeaders(headers, owner))
-                    .retrieve().toBodilessEntity();
-        } catch (RestClientException cancellationFailure) {
-            log.warn("Checkout setup failed and order could not be locally cancelled orderId={} error={}",
-                    orderId, cancellationFailure.getClass().getSimpleName());
-        }
     }
 
     private void paymentHeaders(org.springframework.http.HttpHeaders headers, String owner) {

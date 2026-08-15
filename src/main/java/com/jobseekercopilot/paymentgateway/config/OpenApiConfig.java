@@ -29,7 +29,7 @@ public class OpenApiConfig {
                         .description("Frontend-facing gateway for the server-owned document-credit catalog, "
                                 + "wallet, transactions, checkout readiness and durable order status. Legacy AI "
                                 + "token routes remain available during migration.")
-                        .version("2.1.0")
+                        .version("2.1.1")
                         .contact(new Contact().name("Jobseeker Copilot"))
                         .license(new License().name("MIT")));
     }

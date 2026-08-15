@@ -10,10 +10,12 @@ import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.web.client.RestClient;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.content;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.header;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
+import static org.springframework.test.web.client.response.MockRestResponseCreators.withServerError;
 
 class DocumentCreditGatewayServiceTest {
     private static final String PAYMENT_TOKEN =
@@ -84,6 +86,41 @@ class DocumentCreditGatewayServiceTest {
         assertThat(response.pricingSnapshot().taxStatus()).isEqualTo("NOT_VAT_REGISTERED");
         assertThat(response.promotionBonusDocumentCredits()).isEqualTo(13);
         assertThat(response.consumerAcknowledgementsRecorded()).isTrue();
+        paymentServer.verify();
+        stripeServer.verify();
+    }
+
+    @Test
+    void ambiguousProviderFailureIsPropagatedWithoutBlindlyCancellingTheOrder() {
+        String orderId = "1c05d1ab-e57b-4904-b627-e55a7132207c";
+        paymentServer.expect(requestTo("https://payment.example.test/api/v2/payments/orders"))
+                .andRespond(withSuccess("""
+                        {"orderId":"%s","status":"PENDING_CHECKOUT","ownerId":"owner-123",
+                         "catalogVersion":"public-beta-2026-08-15","pricingPlanId":"active",
+                         "pricingPlanName":"Active","documentCredits":25,
+                         "promotionBonusDocumentCredits":13,"promotionGuaranteed":true,
+                         "priceMinor":1699,"currency":"GBP","billingCountry":"GB",
+                         "taxTreatment":"VAT_NOT_CHARGED","taxStatus":"NOT_VAT_REGISTERED",
+                         "legalEntityType":"SOLE_TRADER",
+                         "legalEntityConfigurationVersion":"seller-terms-v1",
+                         "displayedPriceIsCheckoutTotal":true,
+                         "consumerTermsVersion":"uk-consumer-terms-2026-08-15",
+                         "consumerAcknowledgementsRecorded":true,
+                         "expiresAt":"2026-08-15T12:30:00Z"}
+                        """.formatted(orderId), MediaType.APPLICATION_JSON));
+        stripeServer.expect(requestTo(
+                        "https://stripe.example.test/api/v2/stripe/checkout-sessions"))
+                .andRespond(withServerError());
+
+        assertThatThrownBy(() -> service.checkout(
+                        "owner-123",
+                        "click-provider-ambiguous",
+                        new DocumentCreditCheckoutRequest(
+                                "active", "GB", true, true)))
+                .isInstanceOf(org.springframework.web.client.RestClientException.class);
+
+        // No Payment cancellation expectation exists: any guessed compensation
+        // request would fail verification instead of silently passing.
         paymentServer.verify();
         stripeServer.verify();
     }

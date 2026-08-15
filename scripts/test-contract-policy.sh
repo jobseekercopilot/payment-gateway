@@ -46,7 +46,7 @@ if "$repository_root/scripts/verify-contracts.sh" "$temporary_dir/stripe-field" 
 fi
 
 copy_contracts "$temporary_dir/source-revision"
-sed 's/revision=0243471/revision=0000000/' \
+sed 's/^revision=.*/revision=0000000000000000000000000000000000000000/' \
     "$temporary_dir/source-revision/payment-service.SOURCE" \
     > "$temporary_dir/source-revision/changed.SOURCE"
 mv "$temporary_dir/source-revision/changed.SOURCE" "$temporary_dir/source-revision/payment-service.SOURCE"
