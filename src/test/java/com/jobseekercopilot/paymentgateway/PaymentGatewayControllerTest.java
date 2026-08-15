@@ -8,8 +8,14 @@ import com.jobseekercopilot.paymentgateway.dto.DemoPurchaseResponse;
 import com.jobseekercopilot.paymentgateway.dto.PricingPlansResponse;
 import com.jobseekercopilot.paymentgateway.dto.TokenPricingPlanResponse;
 import com.jobseekercopilot.paymentgateway.dto.WalletSummaryResponse;
+import com.jobseekercopilot.paymentgateway.dto.DocumentCreditCheckoutResponse;
+import com.jobseekercopilot.paymentgateway.dto.DocumentCreditCheckoutResponse.PricingSnapshot;
+import com.jobseekercopilot.paymentgateway.dto.DocumentCreditCheckoutResponse.Status;
+import com.jobseekercopilot.paymentgateway.service.DocumentCreditGatewayService;
 import com.jobseekercopilot.paymentgateway.service.PaymentGatewayService;
+import java.time.Instant;
 import java.util.List;
+import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -36,6 +42,7 @@ class PaymentGatewayControllerTest {
     @Autowired private MockMvc mockMvc;
     @Autowired private ObjectMapper objectMapper;
     @MockBean private PaymentGatewayService paymentGatewayService;
+    @MockBean private DocumentCreditGatewayService documentCreditGatewayService;
 
     @Test
     void walletEndpointCallsPaymentService() throws Exception {
@@ -157,5 +164,38 @@ class PaymentGatewayControllerTest {
                         .header("X-Service-Token", BFF_TOKEN))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("PAYMENT_OWNER_REQUIRED"));
+    }
+
+    @Test
+    void documentCreditCheckoutExposesOnlyOwnedServerSnapshotAndUrl() throws Exception {
+        UUID orderId = UUID.fromString("1c05d1ab-e57b-4904-b627-e55a7132207c");
+        when(documentCreditGatewayService.checkout(
+                eq("user-123"), eq("click-123"), any())).thenReturn(
+                new DocumentCreditCheckoutResponse(
+                        orderId, "cs_test_owned", "https://checkout.stripe.test/cs_test_owned",
+                        Status.CHECKOUT_OPEN, Instant.parse("2026-08-15T12:30:00Z"),
+                        new PricingSnapshot("public-beta-2026-08-15", "active", "Active",
+                                25, 1699, "GBP", "GB", "VAT_NOT_CHARGED",
+                                "NOT_VAT_REGISTERED", "SOLE_TRADER", "seller-terms-v1", true),
+                        13, true, "uk-consumer-terms-2026-08-15", true));
+
+        mockMvc.perform(post("/api/v2/payments/checkout")
+                        .header("X-Service-Token", BFF_TOKEN)
+                        .header("X-Payment-Owner", "user-123")
+                        .header("Idempotency-Key", "click-123")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"pricingPlanId":"active","billingCountry":"GB",
+                                 "immediateSupplyRequested":true,
+                                 "cancellationRightLossAcknowledged":true}
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.orderId").value(orderId.toString()))
+                .andExpect(jsonPath("$.url")
+                        .value("https://checkout.stripe.test/cs_test_owned"))
+                .andExpect(jsonPath("$.pricingSnapshot.priceMinor").value(1699))
+                .andExpect(jsonPath("$.pricingSnapshot.taxStatus")
+                        .value("NOT_VAT_REGISTERED"))
+                .andExpect(jsonPath("$.promotionBonusDocumentCredits").value(13));
     }
 }

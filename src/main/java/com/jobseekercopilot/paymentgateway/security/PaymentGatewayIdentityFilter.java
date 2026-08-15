@@ -1,6 +1,7 @@
 package com.jobseekercopilot.paymentgateway.security;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.jobseekercopilot.paymentgateway.exception.PaymentGatewayErrorResponse;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -20,6 +21,7 @@ public final class PaymentGatewayIdentityFilter extends OncePerRequestFilter {
     public static final String OWNER_ATTRIBUTE = "paymentOwner";
 
     private static final String PAYMENT_PATH_PREFIX = "/api/v1/payment";
+    private static final String DOCUMENT_PAYMENT_PATH_PREFIX = "/api/v2/payments";
     private static final String LEGACY_OWNER_HEADER = "X-User-Id";
     private static final int MAXIMUM_OWNER_LENGTH = 128;
 
@@ -36,7 +38,10 @@ public final class PaymentGatewayIdentityFilter extends OncePerRequestFilter {
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
         String path = request.getRequestURI();
-        return !(path.equals(PAYMENT_PATH_PREFIX) || path.startsWith(PAYMENT_PATH_PREFIX + "/"));
+        return !(path.equals(PAYMENT_PATH_PREFIX)
+                || path.startsWith(PAYMENT_PATH_PREFIX + "/")
+                || path.equals(DOCUMENT_PAYMENT_PATH_PREFIX)
+                || path.startsWith(DOCUMENT_PAYMENT_PATH_PREFIX + "/"));
     }
 
     @Override
@@ -100,6 +105,6 @@ public final class PaymentGatewayIdentityFilter extends OncePerRequestFilter {
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         objectMapper.writeValue(
                 response.getOutputStream(),
-                new PaymentGatewayIdentityError(code, message));
+                new PaymentGatewayErrorResponse(code, code, message));
     }
 }

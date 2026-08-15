@@ -34,6 +34,10 @@ The build needs no sibling checkout, `libs` directory or generated binary.
 The OpenAPI contract captured during the source audit is in
 `contracts/openapi.json`.
 
+Version `2.1.1` preserves ambiguous Stripe creation and binding outcomes for
+server-side reconciliation; it never asks Payment Service to cancel an order
+solely because a downstream response was lost.
+
 The gateway requires `BFF_TO_PAYMENT_GATEWAY_TOKEN` on ingress and uses
 `PAYMENT_GATEWAY_TO_PAYMENT_SERVICE_TOKEN` and
 `PAYMENT_GATEWAY_TO_STRIPE_GATEWAY_TOKEN` on the two downstream boundaries.
