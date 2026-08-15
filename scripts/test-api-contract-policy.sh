@@ -64,4 +64,31 @@ if "$repository_root/scripts/verify-api-contract.sh" "$temporary_dir/payment-own
     exit 1
 fi
 
+copy_contract "$temporary_dir/v2-idempotency"
+jq '(.paths["/api/v2/payments/checkout"].post.parameters[]
+        | select(.name == "Idempotency-Key")).required = false' \
+    "$temporary_dir/v2-idempotency/openapi.json" \
+    > "$temporary_dir/v2-idempotency/changed.json"
+mv "$temporary_dir/v2-idempotency/changed.json" \
+   "$temporary_dir/v2-idempotency/openapi.json"
+(cd "$temporary_dir/v2-idempotency" && sha256sum openapi.json > SHA256SUMS)
+if "$repository_root/scripts/verify-api-contract.sh" \
+        "$temporary_dir/v2-idempotency/openapi.json" >/dev/null 2>&1; then
+    echo "API contract negative test accepted an optional v2 Checkout idempotency key" >&2
+    exit 1
+fi
+
+copy_contract "$temporary_dir/v2-required-response"
+jq 'del(.components.schemas.DocumentCreditCheckoutResponse.required)' \
+    "$temporary_dir/v2-required-response/openapi.json" \
+    > "$temporary_dir/v2-required-response/changed.json"
+mv "$temporary_dir/v2-required-response/changed.json" \
+   "$temporary_dir/v2-required-response/openapi.json"
+(cd "$temporary_dir/v2-required-response" && sha256sum openapi.json > SHA256SUMS)
+if "$repository_root/scripts/verify-api-contract.sh" \
+        "$temporary_dir/v2-required-response/openapi.json" >/dev/null 2>&1; then
+    echo "API contract negative test accepted missing canonical response requirements" >&2
+    exit 1
+fi
+
 echo "API contract policy negative tests passed"
