@@ -64,7 +64,7 @@ class PaymentGatewayServiceTest {
                 .andExpect(noHeader("X-User-Id"))
                 .andRespond(withSuccess(
                         "{\"plans\":[{\"id\":\"starter\",\"name\":\"Starter\","
-                                + "\"tokenAmount\":100000,\"priceGbpPence\":799}]}",
+                                + "\"tokenAmount\":100000,\"priceGbpPence\":499}]}",
                         MediaType.APPLICATION_JSON));
         stripeServer.expect(requestTo("https://stripe.example.test/api/v1/stripe/checkout-sessions"))
                 .andExpect(header("X-Service-Token", STRIPE_TOKEN))
@@ -72,7 +72,7 @@ class PaymentGatewayServiceTest {
                 .andExpect(noHeader("X-User-Id"))
                 .andExpect(content().json(
                         "{\"userId\":\"owner-123\",\"pricingPlanId\":\"starter\","
-                                + "\"tokenAmount\":100000,\"priceGbpPence\":799}"))
+                                + "\"tokenAmount\":100000,\"priceGbpPence\":499}"))
                 .andRespond(withSuccess(
                         "{\"sessionId\":\"cs_test_123\","
                                 + "\"checkoutUrl\":\"https://checkout.example.test/cs_test_123\"}",

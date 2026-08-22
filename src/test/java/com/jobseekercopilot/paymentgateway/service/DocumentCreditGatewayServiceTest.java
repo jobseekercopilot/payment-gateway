@@ -53,10 +53,10 @@ class DocumentCreditGatewayServiceTest {
                         """))
                 .andRespond(withSuccess("""
                         {"orderId":"%s","status":"PENDING_CHECKOUT","ownerId":"owner-123",
-                         "catalogVersion":"public-beta-2026-08-15","pricingPlanId":"active",
+                         "catalogVersion":"public-beta-2026-08-22","pricingPlanId":"active",
                          "pricingPlanName":"Active","documentCredits":25,
                          "promotionBonusDocumentCredits":13,"promotionGuaranteed":true,
-                         "priceMinor":1699,"currency":"GBP","billingCountry":"GB",
+                         "priceMinor":1199,"currency":"GBP","billingCountry":"GB",
                          "taxTreatment":"VAT_NOT_CHARGED","taxStatus":"NOT_VAT_REGISTERED",
                          "legalEntityType":"SOLE_TRADER",
                          "legalEntityConfigurationVersion":"seller-terms-v1",
@@ -96,10 +96,10 @@ class DocumentCreditGatewayServiceTest {
         paymentServer.expect(requestTo("https://payment.example.test/api/v2/payments/orders"))
                 .andRespond(withSuccess("""
                         {"orderId":"%s","status":"PENDING_CHECKOUT","ownerId":"owner-123",
-                         "catalogVersion":"public-beta-2026-08-15","pricingPlanId":"active",
+                         "catalogVersion":"public-beta-2026-08-22","pricingPlanId":"active",
                          "pricingPlanName":"Active","documentCredits":25,
                          "promotionBonusDocumentCredits":13,"promotionGuaranteed":true,
-                         "priceMinor":1699,"currency":"GBP","billingCountry":"GB",
+                         "priceMinor":1199,"currency":"GBP","billingCountry":"GB",
                          "taxTreatment":"VAT_NOT_CHARGED","taxStatus":"NOT_VAT_REGISTERED",
                          "legalEntityType":"SOLE_TRADER",
                          "legalEntityConfigurationVersion":"seller-terms-v1",

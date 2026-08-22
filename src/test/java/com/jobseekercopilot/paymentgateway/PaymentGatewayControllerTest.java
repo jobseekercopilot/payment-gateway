@@ -66,7 +66,7 @@ class PaymentGatewayControllerTest {
         plan.setId("starter");
         plan.setName("Starter");
         plan.setTokenAmount(100000);
-        plan.setPriceGbpPence(799);
+        plan.setPriceGbpPence(499);
         PricingPlansResponse response = new PricingPlansResponse();
         response.setPlans(List.of(plan));
         when(paymentGatewayService.pricing()).thenReturn(response);
@@ -174,8 +174,8 @@ class PaymentGatewayControllerTest {
                 new DocumentCreditCheckoutResponse(
                         orderId, "cs_test_owned", "https://checkout.stripe.test/cs_test_owned",
                         Status.CHECKOUT_OPEN, Instant.parse("2026-08-15T12:30:00Z"),
-                        new PricingSnapshot("public-beta-2026-08-15", "active", "Active",
-                                25, 1699, "GBP", "GB", "VAT_NOT_CHARGED",
+                        new PricingSnapshot("public-beta-2026-08-22", "active", "Active",
+                                25, 1199, "GBP", "GB", "VAT_NOT_CHARGED",
                                 "NOT_VAT_REGISTERED", "SOLE_TRADER", "seller-terms-v1", true),
                         13, true, "uk-consumer-terms-2026-08-15", true));
 
@@ -193,7 +193,7 @@ class PaymentGatewayControllerTest {
                 .andExpect(jsonPath("$.orderId").value(orderId.toString()))
                 .andExpect(jsonPath("$.url")
                         .value("https://checkout.stripe.test/cs_test_owned"))
-                .andExpect(jsonPath("$.pricingSnapshot.priceMinor").value(1699))
+                .andExpect(jsonPath("$.pricingSnapshot.priceMinor").value(1199))
                 .andExpect(jsonPath("$.pricingSnapshot.taxStatus")
                         .value("NOT_VAT_REGISTERED"))
                 .andExpect(jsonPath("$.promotionBonusDocumentCredits").value(13));
