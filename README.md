@@ -34,7 +34,9 @@ The build needs no sibling checkout, `libs` directory or generated binary.
 The OpenAPI contract captured during the source audit is in
 `contracts/openapi.json`.
 
-Version `2.1.1` preserves ambiguous Stripe creation and binding outcomes for
+Version `2.2.0` presents the browser-facing allowance as document generations
+while accepting the Payment Service's transitional internal credit field names.
+It preserves ambiguous Stripe creation and binding outcomes for
 server-side reconciliation; it never asks Payment Service to cancel an order
 solely because a downstream response was lost.
 

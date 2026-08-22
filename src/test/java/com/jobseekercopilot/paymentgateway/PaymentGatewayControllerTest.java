@@ -196,6 +196,9 @@ class PaymentGatewayControllerTest {
                 .andExpect(jsonPath("$.pricingSnapshot.priceMinor").value(1199))
                 .andExpect(jsonPath("$.pricingSnapshot.taxStatus")
                         .value("NOT_VAT_REGISTERED"))
-                .andExpect(jsonPath("$.promotionBonusDocumentCredits").value(13));
+                .andExpect(jsonPath("$.promotionBonusDocumentGenerations").value(13))
+                .andExpect(jsonPath("$.pricingSnapshot.documentGenerations").value(25))
+                .andExpect(jsonPath("$.promotionBonusDocumentCredits").doesNotExist())
+                .andExpect(jsonPath("$.pricingSnapshot.documentCredits").doesNotExist());
     }
 }

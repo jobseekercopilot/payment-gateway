@@ -1,5 +1,7 @@
 package com.jobseekercopilot.paymentgateway.dto;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
@@ -8,9 +10,9 @@ public record DocumentCreditTransactionsResponse(List<Transaction> transactions)
     public record Transaction(
             UUID id,
             Type type,
-            int documentCredits,
-            int balanceBeforeDocumentCredits,
-            int balanceAfterDocumentCredits,
+            @JsonProperty("documentGenerations") @JsonAlias("documentCredits") int documentCredits,
+            @JsonProperty("balanceBeforeDocumentGenerations") @JsonAlias("balanceBeforeDocumentCredits") int balanceBeforeDocumentCredits,
+            @JsonProperty("balanceAfterDocumentGenerations") @JsonAlias("balanceAfterDocumentCredits") int balanceAfterDocumentCredits,
             String operationId,
             String description,
             String referenceType,

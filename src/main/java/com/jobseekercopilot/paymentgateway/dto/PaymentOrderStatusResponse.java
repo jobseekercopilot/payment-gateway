@@ -1,5 +1,9 @@
 package com.jobseekercopilot.paymentgateway.dto;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonValue;
 import java.time.Instant;
 import java.util.UUID;
 
@@ -7,9 +11,9 @@ public record PaymentOrderStatusResponse(
         UUID orderId,
         Status status,
         String pricingPlanId,
-        int documentCredits,
-        int promotionBonusDocumentCredits,
-        int totalGrantedDocumentCredits,
+        @JsonProperty("documentGenerations") @JsonAlias("documentCredits") int documentCredits,
+        @JsonProperty("promotionBonusDocumentGenerations") @JsonAlias("promotionBonusDocumentCredits") int promotionBonusDocumentCredits,
+        @JsonProperty("totalGrantedDocumentGenerations") @JsonAlias("totalGrantedDocumentCredits") int totalGrantedDocumentCredits,
         long priceMinor,
         String currency,
         String taxTreatment,
@@ -19,7 +23,7 @@ public record PaymentOrderStatusResponse(
         Instant createdAt,
         Instant expiresAt,
         Instant fulfilledAt,
-        boolean creditsAdded,
+        @JsonProperty("generationsAdded") @JsonAlias("creditsAdded") boolean creditsAdded,
         MessageCode messageCode) {
     public enum Status {
         PENDING_CHECKOUT,
@@ -41,6 +45,17 @@ public record PaymentOrderStatusResponse(
         PAYMENT_REFUNDED,
         PAYMENT_PARTIALLY_REFUNDED,
         PAYMENT_DISPUTED,
-        PAYMENT_REVIEW_REQUIRED
+        PAYMENT_REVIEW_REQUIRED;
+
+        @JsonCreator
+        public static MessageCode fromJson(String value) {
+            if ("GENERATIONS_ADDED".equals(value)) return CREDITS_ADDED;
+            return valueOf(value);
+        }
+
+        @JsonValue
+        public String toJson() {
+            return this == CREDITS_ADDED ? "GENERATIONS_ADDED" : name();
+        }
     }
 }
