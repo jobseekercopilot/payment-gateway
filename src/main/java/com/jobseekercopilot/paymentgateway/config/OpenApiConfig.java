@@ -101,6 +101,7 @@ public class OpenApiConfig {
                     "NOT_CONFIGURED", "SOLE_TRADER", "LIMITED_COMPANY");
             enumerated(openApi, "CheckoutReadinessResponse", "code",
                     "READY", "PAYMENTS_DISABLED", "LIVE_RELEASE_NOT_AUTHORISED",
+                    "STRIPE_CATALOG_NOT_CONFIGURED",
                     "TAX_STATUS_NOT_CONFIGURED", "LEGAL_ENTITY_NOT_CONFIGURED",
                     "PROVIDER_UNAVAILABLE", "PAYMENT_SERVICE_UNAVAILABLE",
                     "PAYMENT_PROVIDER_UNAVAILABLE");
@@ -110,6 +111,7 @@ public class OpenApiConfig {
                     "PROVIDER_UNAVAILABLE", "UNAVAILABLE");
             enumerated(openApi, "CheckoutReadinessResponse", "providerCode",
                     "READY", "PAYMENTS_DISABLED", "LIVE_RELEASE_NOT_AUTHORISED",
+                    "STRIPE_CATALOG_NOT_CONFIGURED",
                     "NOT_CHECKED", "UNAVAILABLE");
             enumerated(openApi, "CheckoutReadinessResponse", "mode",
                     "TEST", "LIVE", "FIXTURE", "DISABLED", "UNAVAILABLE");
