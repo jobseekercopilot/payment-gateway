@@ -26,10 +26,10 @@ public class OpenApiConfig {
                                 .description("Dedicated Job Seeker Copilot BFF service identity.")))
                 .info(new Info()
                         .title("Payment Gateway API")
-                        .description("Frontend-facing gateway for the server-owned document-credit catalog, "
-                                + "wallet, transactions, checkout readiness and durable order status. Legacy AI "
-                                + "token routes remain available during migration.")
-                        .version("2.1.1")
+                        .description("Frontend-facing gateway for the server-owned document-generation catalog, "
+                                + "allowance, delivery history, checkout readiness and durable order status. "
+                                + "Customer entitlement is measured only in successful document generations.")
+                        .version("2.2.0")
                         .contact(new Contact().name("Jobseeker Copilot"))
                         .license(new License().name("MIT")));
     }
@@ -41,36 +41,36 @@ public class OpenApiConfig {
                     "checkoutAvailable", "code", "paymentServiceCode", "providerCode", "mode");
             required(openApi, "DocumentCreditCatalogResponse",
                     "catalogVersion", "currency", "billingCountry", "taxTreatment", "taxStatus",
-                    "displayedPriceIsCheckoutTotal", "automaticRenewal", "creditUnit",
-                    "freeAllowanceCredits", "plans", "promotion");
+                    "displayedPriceIsCheckoutTotal", "automaticRenewal", "generationUnit",
+                    "freeAllowanceGenerations", "plans", "promotion");
             required(openApi, "Plan",
-                    "id", "name", "description", "documentCredits", "priceMinor", "currency",
-                    "fullApplicationEquivalent", "promotionBonusDocumentCredits", "active",
+                    "id", "name", "description", "documentGenerations", "priceMinor", "currency",
+                    "fullApplicationEquivalent", "promotionBonusDocumentGenerations", "active",
                     "sortOrder");
             required(openApi, "Promotion",
                     "id", "enabled", "status", "bonusPercent", "customerLimit");
             required(openApi, "DocumentCreditCheckoutResponse",
                     "orderId", "checkoutSessionId", "url", "status", "expiresAt",
-                    "pricingSnapshot", "promotionBonusDocumentCredits", "promotionGuaranteed",
+                    "pricingSnapshot", "promotionBonusDocumentGenerations", "promotionGuaranteed",
                     "consumerTermsVersion", "consumerAcknowledgementsRecorded");
             required(openApi, "PricingSnapshot",
-                    "catalogVersion", "pricingPlanId", "pricingPlanName", "documentCredits",
+                    "catalogVersion", "pricingPlanId", "pricingPlanName", "documentGenerations",
                     "priceMinor", "currency", "billingCountry", "taxTreatment", "taxStatus",
                     "legalEntityType", "legalEntityConfigurationVersion",
                     "displayedPriceIsCheckoutTotal");
             required(openApi, "DocumentCreditWalletResponse",
-                    "balanceDocumentCredits", "lifetimePurchasedDocumentCredits",
-                    "lifetimeSpentDocumentCredits", "lifetimeReversedDocumentCredits",
-                    "reviewDebtDocumentCredits", "freeAllowanceGranted", "status");
+                    "remainingDocumentGenerations", "lifetimePurchasedDocumentGenerations",
+                    "lifetimeUsedDocumentGenerations", "lifetimeReversedDocumentGenerations",
+                    "reviewDebtDocumentGenerations", "freeAllowanceGranted", "status");
             required(openApi, "DocumentCreditTransactionsResponse", "transactions");
             required(openApi, "Transaction",
-                    "id", "type", "documentCredits", "balanceBeforeDocumentCredits",
-                    "balanceAfterDocumentCredits", "operationId", "description", "createdAt");
+                    "id", "type", "documentGenerations", "balanceBeforeDocumentGenerations",
+                    "balanceAfterDocumentGenerations", "operationId", "description", "createdAt");
             required(openApi, "PaymentOrderStatusResponse",
-                    "orderId", "status", "pricingPlanId", "documentCredits",
-                    "promotionBonusDocumentCredits", "totalGrantedDocumentCredits", "priceMinor",
+                    "orderId", "status", "pricingPlanId", "documentGenerations",
+                    "promotionBonusDocumentGenerations", "totalGrantedDocumentGenerations", "priceMinor",
                     "currency", "taxTreatment", "taxStatus", "legalEntityType",
-                    "legalEntityConfigurationVersion", "createdAt", "expiresAt", "creditsAdded",
+                    "legalEntityConfigurationVersion", "createdAt", "expiresAt", "generationsAdded",
                     "messageCode");
             required(openApi, "PaymentGatewayErrorResponse", "error", "code", "message");
 
@@ -80,7 +80,7 @@ public class OpenApiConfig {
                     "VAT_NOT_CHARGED", "VAT_INCLUDED");
             enumerated(openApi, "DocumentCreditCatalogResponse", "taxStatus",
                     "NOT_CONFIGURED", "NOT_VAT_REGISTERED", "VAT_REGISTERED");
-            enumerated(openApi, "DocumentCreditCatalogResponse", "creditUnit", "DOCUMENT");
+            enumerated(openApi, "DocumentCreditCatalogResponse", "generationUnit", "DOCUMENT");
             enumerated(openApi, "Plan", "currency", "GBP");
             enumerated(openApi, "PricingSnapshot", "currency", "GBP");
             enumerated(openApi, "PricingSnapshot", "billingCountry", "GB");

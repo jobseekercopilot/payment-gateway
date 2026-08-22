@@ -1,5 +1,7 @@
 package com.jobseekercopilot.paymentgateway.dto;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.time.Instant;
 import java.util.UUID;
 
@@ -10,7 +12,7 @@ public record DocumentCreditCheckoutResponse(
         Status status,
         Instant expiresAt,
         PricingSnapshot pricingSnapshot,
-        int promotionBonusDocumentCredits,
+        @JsonProperty("promotionBonusDocumentGenerations") @JsonAlias("promotionBonusDocumentCredits") int promotionBonusDocumentCredits,
         boolean promotionGuaranteed,
         String consumerTermsVersion,
         boolean consumerAcknowledgementsRecorded) {
@@ -22,7 +24,7 @@ public record DocumentCreditCheckoutResponse(
             String catalogVersion,
             String pricingPlanId,
             String pricingPlanName,
-            int documentCredits,
+            @JsonProperty("documentGenerations") @JsonAlias("documentCredits") int documentCredits,
             long priceMinor,
             String currency,
             String billingCountry,

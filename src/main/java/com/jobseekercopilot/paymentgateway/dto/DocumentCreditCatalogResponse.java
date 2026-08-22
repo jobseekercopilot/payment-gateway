@@ -1,5 +1,7 @@
 package com.jobseekercopilot.paymentgateway.dto;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 
 public record DocumentCreditCatalogResponse(
@@ -10,19 +12,19 @@ public record DocumentCreditCatalogResponse(
         String taxStatus,
         boolean displayedPriceIsCheckoutTotal,
         boolean automaticRenewal,
-        String creditUnit,
-        int freeAllowanceCredits,
+        @JsonProperty("generationUnit") @JsonAlias("creditUnit") String creditUnit,
+        @JsonProperty("freeAllowanceGenerations") @JsonAlias("freeAllowanceCredits") int freeAllowanceCredits,
         List<Plan> plans,
         Promotion promotion) {
     public record Plan(
             String id,
             String name,
             String description,
-            int documentCredits,
+            @JsonProperty("documentGenerations") @JsonAlias("documentCredits") int documentCredits,
             long priceMinor,
             String currency,
             int fullApplicationEquivalent,
-            int promotionBonusDocumentCredits,
+            @JsonProperty("promotionBonusDocumentGenerations") @JsonAlias("promotionBonusDocumentCredits") int promotionBonusDocumentCredits,
             boolean active,
             int sortOrder) {}
     public record Promotion(
