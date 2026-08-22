@@ -30,19 +30,10 @@ jq -e '
     (.info.version == "2.2.0") and
     (.components.securitySchemes.serviceToken
         | .type == "apiKey" and .in == "header" and .name == "X-Service-Token") and
-    (.paths["/api/v1/payment/wallet"].get.operationId == "wallet") and
-    (.paths["/api/v1/payment/transactions"].get.operationId == "transactions") and
-    (.paths["/api/v1/payment/pricing"].get.operationId == "pricing") and
-    (.paths["/api/v1/payment/demo-purchase"].post.operationId == "demoPurchase") and
-    (.paths["/api/v1/payment/checkout"].post.operationId == "checkout") and
-    (.paths["/api/v1/payment/estimate"].post.operationId == "estimate") and
+    (.paths | keys | length == 6) and
+    (.paths | keys | all(startswith("/api/v2/payments/"))) and
     ([.paths[] | .[]]
         | all(serviceAuthenticated(.) and trustedOwner(.) and noLegacyOwner(.))) and
-    (.components.schemas.CheckoutRequest.required == ["pricingPlanId"]) and
-    (.components.schemas.CheckoutResponse.properties | has("sessionId") and has("checkoutUrl")) and
-    (.components.schemas.WalletSummaryResponse.properties
-        | has("userId") and has("balanceTokens") and has("lifetimePurchasedTokens") and
-          has("lifetimeSpentTokens") and has("lifetimeRefundedTokens") and has("freeTrialGranted")) and
     (.paths["/api/v2/payments/catalog"].get.operationId == "getDocumentCreditCatalog") and
     (.paths["/api/v2/payments/checkout-readiness"].get.operationId
         == "getDocumentCreditCheckoutReadiness") and
@@ -73,14 +64,24 @@ jq -e '
     (.components.schemas.PricingSnapshot.properties.legalEntityType.enum
         == ["NOT_CONFIGURED", "SOLE_TRADER", "LIMITED_COMPANY"]) and
     (.components.schemas.DocumentCreditCatalogResponse.required | length == 11) and
+    (.components.schemas.DocumentCreditCatalogResponse.properties
+        | has("generationUnit") and has("freeAllowanceGenerations") and
+          (has("creditUnit") | not) and (has("freeAllowanceCredits") | not)) and
+    (.components.schemas.Plan.properties
+        | has("documentGenerations") and has("promotionBonusDocumentGenerations") and
+          (has("documentCredits") | not) and (has("promotionBonusDocumentCredits") | not)) and
     (.components.schemas.DocumentCreditWalletResponse.required | length == 7) and
+    (.components.schemas.DocumentCreditWalletResponse.properties
+        | has("remainingDocumentGenerations") and has("lifetimeUsedDocumentGenerations") and
+          (has("balanceDocumentCredits") | not) and (has("lifetimeSpentDocumentCredits") | not)) and
     (.components.schemas.DocumentCreditTransactionsResponse.required == ["transactions"]) and
     (.components.schemas.PaymentOrderStatusResponse.required | length == 16) and
     (.components.schemas.CheckoutReadinessResponse.required | length == 5) and
     (.components.schemas.PaymentGatewayErrorResponse.required
         | sort == ["code", "error", "message"]) and
     (.paths["/api/v2/payments/checkout"].post.responses["422"].content["application/json"].schema["$ref"]
-        == "#/components/schemas/PaymentGatewayErrorResponse")
+        == "#/components/schemas/PaymentGatewayErrorResponse") and
+    ((tostring | test("AI token|balanceTokens|tokenAmount|documentCredits|CREDITS_ADDED"; "i")) | not)
 ' "$contract" >/dev/null
 
 if [[ -n "$generated" ]]; then

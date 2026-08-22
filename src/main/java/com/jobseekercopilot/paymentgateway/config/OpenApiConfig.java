@@ -27,8 +27,8 @@ public class OpenApiConfig {
                 .info(new Info()
                         .title("Payment Gateway API")
                         .description("Frontend-facing gateway for the server-owned document-generation catalog, "
-                                + "wallet, transactions, checkout readiness and durable order status. Legacy AI "
-                                + "token routes remain available during migration.")
+                                + "allowance, delivery history, checkout readiness and durable order status. "
+                                + "Customer entitlement is measured only in successful document generations.")
                         .version("2.2.0")
                         .contact(new Contact().name("Jobseeker Copilot"))
                         .license(new License().name("MIT")));

@@ -24,7 +24,7 @@ if "$repository_root/scripts/verify-api-contract.sh" "$temporary_dir/checksum-dr
 fi
 
 copy_contract "$temporary_dir/checkout"
-jq 'del(.paths["/api/v1/payment/checkout"].post)' \
+jq 'del(.paths["/api/v2/payments/checkout"].post)' \
     "$temporary_dir/checkout/openapi.json" > "$temporary_dir/checkout/changed.json"
 mv "$temporary_dir/checkout/changed.json" "$temporary_dir/checkout/openapi.json"
 (cd "$temporary_dir/checkout" && sha256sum openapi.json > SHA256SUMS)
@@ -33,18 +33,8 @@ if "$repository_root/scripts/verify-api-contract.sh" "$temporary_dir/checkout/op
     exit 1
 fi
 
-copy_contract "$temporary_dir/checkout-url"
-jq 'del(.components.schemas.CheckoutResponse.properties.checkoutUrl)' \
-    "$temporary_dir/checkout-url/openapi.json" > "$temporary_dir/checkout-url/changed.json"
-mv "$temporary_dir/checkout-url/changed.json" "$temporary_dir/checkout-url/openapi.json"
-(cd "$temporary_dir/checkout-url" && sha256sum openapi.json > SHA256SUMS)
-if "$repository_root/scripts/verify-api-contract.sh" "$temporary_dir/checkout-url/openapi.json" >/dev/null 2>&1; then
-    echo "API contract negative test accepted removal of checkoutUrl" >&2
-    exit 1
-fi
-
 copy_contract "$temporary_dir/service-identity"
-jq 'del(.paths["/api/v1/payment/wallet"].get.security)' \
+jq 'del(.paths["/api/v2/payments/wallet"].get.security)' \
     "$temporary_dir/service-identity/openapi.json" > "$temporary_dir/service-identity/changed.json"
 mv "$temporary_dir/service-identity/changed.json" "$temporary_dir/service-identity/openapi.json"
 (cd "$temporary_dir/service-identity" && sha256sum openapi.json > SHA256SUMS)
@@ -54,7 +44,7 @@ if "$repository_root/scripts/verify-api-contract.sh" "$temporary_dir/service-ide
 fi
 
 copy_contract "$temporary_dir/payment-owner"
-jq '.paths["/api/v1/payment/checkout"].post.parameters
+jq '.paths["/api/v2/payments/checkout"].post.parameters
         |= map(select(.name != "X-Payment-Owner"))' \
     "$temporary_dir/payment-owner/openapi.json" > "$temporary_dir/payment-owner/changed.json"
 mv "$temporary_dir/payment-owner/changed.json" "$temporary_dir/payment-owner/openapi.json"
@@ -88,6 +78,20 @@ mv "$temporary_dir/v2-required-response/changed.json" \
 if "$repository_root/scripts/verify-api-contract.sh" \
         "$temporary_dir/v2-required-response/openapi.json" >/dev/null 2>&1; then
     echo "API contract negative test accepted missing canonical response requirements" >&2
+    exit 1
+fi
+
+copy_contract "$temporary_dir/legacy-field"
+jq '.components.schemas.DocumentCreditWalletResponse.properties.balanceDocumentCredits = {
+        "type": "integer", "format": "int32"
+    }' "$temporary_dir/legacy-field/openapi.json" \
+    > "$temporary_dir/legacy-field/changed.json"
+mv "$temporary_dir/legacy-field/changed.json" \
+   "$temporary_dir/legacy-field/openapi.json"
+(cd "$temporary_dir/legacy-field" && sha256sum openapi.json > SHA256SUMS)
+if "$repository_root/scripts/verify-api-contract.sh" \
+        "$temporary_dir/legacy-field/openapi.json" >/dev/null 2>&1; then
+    echo "API contract negative test accepted a customer-facing credit field" >&2
     exit 1
 fi
 
