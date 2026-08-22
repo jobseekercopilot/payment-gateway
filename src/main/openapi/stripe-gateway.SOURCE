@@ -1,0 +1,4 @@
+repository=jobseekercopilot/stripe-gateway
+revision=791b262ab8f4846fd47a131fface066d0cffdc5f
+path=contracts/openapi.json
+sha256=2926c5270cdeb04e63ffb7272e352e490eb9e784a7d18b262495d7de319f479c

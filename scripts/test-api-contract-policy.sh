@@ -1,0 +1,98 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+repository_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+temporary_dir="$(mktemp -d)"
+trap 'rm -rf "$temporary_dir"' EXIT
+
+copy_contract() {
+    local destination="$1"
+    mkdir -p "$destination"
+    cp "$repository_root/contracts/openapi.json" "$repository_root/contracts/SHA256SUMS" "$destination/"
+}
+
+"$repository_root/scripts/verify-api-contract.sh" "$repository_root/contracts/openapi.json" >/dev/null
+
+copy_contract "$temporary_dir/checksum-drift"
+jq '.info.description = "unreviewed drift"' \
+    "$temporary_dir/checksum-drift/openapi.json" \
+    > "$temporary_dir/checksum-drift/changed.json"
+mv "$temporary_dir/checksum-drift/changed.json" "$temporary_dir/checksum-drift/openapi.json"
+if "$repository_root/scripts/verify-api-contract.sh" "$temporary_dir/checksum-drift/openapi.json" >/dev/null 2>&1; then
+    echo "API contract negative test accepted checksum drift" >&2
+    exit 1
+fi
+
+copy_contract "$temporary_dir/checkout"
+jq 'del(.paths["/api/v2/payments/checkout"].post)' \
+    "$temporary_dir/checkout/openapi.json" > "$temporary_dir/checkout/changed.json"
+mv "$temporary_dir/checkout/changed.json" "$temporary_dir/checkout/openapi.json"
+(cd "$temporary_dir/checkout" && sha256sum openapi.json > SHA256SUMS)
+if "$repository_root/scripts/verify-api-contract.sh" "$temporary_dir/checkout/openapi.json" >/dev/null 2>&1; then
+    echo "API contract negative test accepted removal of checkout" >&2
+    exit 1
+fi
+
+copy_contract "$temporary_dir/service-identity"
+jq 'del(.paths["/api/v2/payments/wallet"].get.security)' \
+    "$temporary_dir/service-identity/openapi.json" > "$temporary_dir/service-identity/changed.json"
+mv "$temporary_dir/service-identity/changed.json" "$temporary_dir/service-identity/openapi.json"
+(cd "$temporary_dir/service-identity" && sha256sum openapi.json > SHA256SUMS)
+if "$repository_root/scripts/verify-api-contract.sh" "$temporary_dir/service-identity/openapi.json" >/dev/null 2>&1; then
+    echo "API contract negative test accepted removal of BFF authentication" >&2
+    exit 1
+fi
+
+copy_contract "$temporary_dir/payment-owner"
+jq '.paths["/api/v2/payments/checkout"].post.parameters
+        |= map(select(.name != "X-Payment-Owner"))' \
+    "$temporary_dir/payment-owner/openapi.json" > "$temporary_dir/payment-owner/changed.json"
+mv "$temporary_dir/payment-owner/changed.json" "$temporary_dir/payment-owner/openapi.json"
+(cd "$temporary_dir/payment-owner" && sha256sum openapi.json > SHA256SUMS)
+if "$repository_root/scripts/verify-api-contract.sh" "$temporary_dir/payment-owner/openapi.json" >/dev/null 2>&1; then
+    echo "API contract negative test accepted removal of trusted ownership" >&2
+    exit 1
+fi
+
+copy_contract "$temporary_dir/v2-idempotency"
+jq '(.paths["/api/v2/payments/checkout"].post.parameters[]
+        | select(.name == "Idempotency-Key")).required = false' \
+    "$temporary_dir/v2-idempotency/openapi.json" \
+    > "$temporary_dir/v2-idempotency/changed.json"
+mv "$temporary_dir/v2-idempotency/changed.json" \
+   "$temporary_dir/v2-idempotency/openapi.json"
+(cd "$temporary_dir/v2-idempotency" && sha256sum openapi.json > SHA256SUMS)
+if "$repository_root/scripts/verify-api-contract.sh" \
+        "$temporary_dir/v2-idempotency/openapi.json" >/dev/null 2>&1; then
+    echo "API contract negative test accepted an optional v2 Checkout idempotency key" >&2
+    exit 1
+fi
+
+copy_contract "$temporary_dir/v2-required-response"
+jq 'del(.components.schemas.DocumentCreditCheckoutResponse.required)' \
+    "$temporary_dir/v2-required-response/openapi.json" \
+    > "$temporary_dir/v2-required-response/changed.json"
+mv "$temporary_dir/v2-required-response/changed.json" \
+   "$temporary_dir/v2-required-response/openapi.json"
+(cd "$temporary_dir/v2-required-response" && sha256sum openapi.json > SHA256SUMS)
+if "$repository_root/scripts/verify-api-contract.sh" \
+        "$temporary_dir/v2-required-response/openapi.json" >/dev/null 2>&1; then
+    echo "API contract negative test accepted missing canonical response requirements" >&2
+    exit 1
+fi
+
+copy_contract "$temporary_dir/legacy-field"
+jq '.components.schemas.DocumentCreditWalletResponse.properties.balanceDocumentCredits = {
+        "type": "integer", "format": "int32"
+    }' "$temporary_dir/legacy-field/openapi.json" \
+    > "$temporary_dir/legacy-field/changed.json"
+mv "$temporary_dir/legacy-field/changed.json" \
+   "$temporary_dir/legacy-field/openapi.json"
+(cd "$temporary_dir/legacy-field" && sha256sum openapi.json > SHA256SUMS)
+if "$repository_root/scripts/verify-api-contract.sh" \
+        "$temporary_dir/legacy-field/openapi.json" >/dev/null 2>&1; then
+    echo "API contract negative test accepted a customer-facing credit field" >&2
+    exit 1
+fi
+
+echo "API contract policy negative tests passed"
